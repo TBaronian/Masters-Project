@@ -6,7 +6,7 @@ from constants import *
 
 # --- Initialize Matrices ---
 
-Y_SIZE = 256; X_SIZE = 256; Z_SIZE = 256
+Y_SIZE = 64; X_SIZE = 64; Z_SIZE = 64
 PARTICLE_MATRIX = np.empty((X_SIZE, Y_SIZE, Z_SIZE, 4))
 PARTICLE_MATRIX_OLD = PARTICLE_MATRIX
 FOUR_POTENTIAL_MATRIX = np.zeros((X_SIZE, Y_SIZE, Z_SIZE, 4))
@@ -64,7 +64,8 @@ def calculate_a_double_dot():
 
     
     for i in range(4):
-        FOUR_POTENTIAL_DOUBLE_DOT[:, :, :, i] = MU_0 * PARTICLE_MATRIX[:, :, :, 0] * PROPER_VELOCITY_MATRIX[:, :, :, i] + LAPLACIAN_FOUR_POTENTIAL[:, :, :, i]
+        FOUR_POTENTIAL_DOUBLE_DOT[:, :, :, i] = (PARTICLE_MATRIX[:, :, :, 0] != 0.0) * MU_0 * PARTICLE_MATRIX[:, :, :, 0] * PROPER_VELOCITY_MATRIX[:, :, :, i] + \
+                                                (PARTICLE_MATRIX[:, :, :, 0] == 0.0) * SPEED_OF_LIGHT**2 * LAPLACIAN_FOUR_POTENTIAL[:, :, :, i]
     return
 
 
@@ -109,10 +110,19 @@ def calculate_a_dot():
     FOUR_POTENTIAL_DOT_MATRIX = FOUR_POTENTIAL_MATRIX - FOUR_POTENTIAL_MATRIX_OLD + DELTA_T * FOUR_POTENTIAL_DOUBLE_DOT
     return
 
+def calculate_u_mu():
+    
+    global PROPER_VELOCITY_MATRIX, PARTICLE_MATRIX
+    gamma =  (PARTICLE_MATRIX[..., 0] != 0) * 1/np.sqrt(1 - (PARTICLE_MATRIX[:, :, :, 1]**2 + PARTICLE_MATRIX[:, :, :, 2]**2 + PARTICLE_MATRIX[:, :, :, 3]**2)/SPEED_OF_LIGHT**2)
+    PROPER_VELOCITY_MATRIX[..., 0] = SPEED_OF_LIGHT * gamma [:, :, :]
+    PROPER_VELOCITY_MATRIX[..., 1:] = gamma[..., None] * PARTICLE_MATRIX[..., 1:]
+    return
+
     
 def update_a():
     
-    global FOUR_POTENTIAL_MATRIX, FOUR_POTENTIAL_MATRIX_OLD, FOUR_POTENTIAL_DOT_MATRIX
+    global FOUR_POTENTIAL_MATRIX, FOUR_POTENTIAL_MATRIX_OLD, FOUR_POTENTIAL_DOT_MATRIX, PROPER_VELOCITY_MATRIX
+    calculate_u_mu()
     calculate_laplacian_of_a()
     calculate_div_of_a()
     calculate_a_dot()
@@ -133,7 +143,7 @@ def render(ax, matrix, z_val=int(Z_SIZE/2)):
     matrix_slice = matrix[:, :, z_val]
     ax.imshow(matrix_slice, cmap='gray')
     fig.show()
-    input("Press Any Key to Continute...")
+    # input("Press Any Key to Continute...")
     
 def get_u_mu(*particle_entry):
     """Get the proper 4-velocity of a particle at a particular position
@@ -161,6 +171,8 @@ def main():
     fig = plt.figure()
     ax_particle = fig.add_subplot(1, 2, 1)
     ax_vector = fig.add_subplot(1, 2, 2)
+    add_charge(q = 255)
+    
     
     # render(ax_vector, FOUR_POTENTIAL_MATRIX[:, :, :, 0].astype(np.int32))
     # add_charge(q=255, v_x = 150/np.sqrt(2), v_y = 150/np.sqrt(2), v_z = 0)

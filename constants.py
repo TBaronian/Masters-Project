@@ -1,8 +1,9 @@
 import numpy as np
 
-SPEED_OF_LIGHT = 300.0
-DELTA_T = 1.0
-MU_0 = 1e-3
+SPEED_OF_LIGHT = 300
+DELTA_T = 0.01
+MU_0 = 4e-7*np.pi
+DELTA_X = 1
 
 laplacian_mask = np.zeros((3, 3, 3))
 laplacian_mask[1,1,1] = -6
