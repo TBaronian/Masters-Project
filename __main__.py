@@ -60,7 +60,11 @@ def move_charge(x, y, z):
 
 def calculate_a_double_dot():
     
-    FOUR_POTENTIAL_DOUBLE_DOT[:, :, :] = MU_0 * PARTICLE_MATRIX[:, :, :, 0] * PROPER_VELOCITY_MATRIX[:, :, :] + LAPLACIAN_FOUR_POTENTIAL[:, :, :]
+    global FOUR_POTENTIAL_DOT_MATRIX, FOUR_POTENTIAL_MATRIX, FOUR_POTENTIAL_DOUBLE_DOT, PARTICLE_MATRIX
+
+    
+    for i in range(4):
+        FOUR_POTENTIAL_DOUBLE_DOT[:, :, :, i] = MU_0 * PARTICLE_MATRIX[:, :, :, 0] * PROPER_VELOCITY_MATRIX[:, :, :, i] + LAPLACIAN_FOUR_POTENTIAL[:, :, :, i]
     return
 
 
@@ -81,31 +85,40 @@ def calculate_u_mu_dot():
         
 def calculate_laplacian_of_a():
     
+    global LAPLACIAN_FOUR_POTENTIAL, laplacian_mask, FOUR_POTENTIAL_MATRIX
+    
     for i in range(4):
-        LAPLACIAN_FOUR_POTENTIAL[:, :, :, i] = sp.convolve(FOUR_POTENTIAL_MATRIX[:, :, :, i], laplacian_mask)
+        LAPLACIAN_FOUR_POTENTIAL[:, :, :, i] = sp.convolve(FOUR_POTENTIAL_MATRIX[:, :, :, i], laplacian_mask, mode="same")
         
 def calculate_div_of_a():
     
+    global DIV_FOUR_POTENTIAL_MATRIX, FOUR_POTENTIAL_MATRIX, div_x_mask, div_y_mask, div_z_mask
+    
     for i in range(4):
-        DIV_FOUR_POTENTIAL_MATRIX[:, :, :, i, 0] = sp.convolve(FOUR_POTENTIAL_MATRIX[:, :, :, i], div_x_mask)
-        DIV_FOUR_POTENTIAL_MATRIX[:, :, :, i, 1] = sp.convolve(FOUR_POTENTIAL_MATRIX[:, :, :, i], div_y_mask)
-        DIV_FOUR_POTENTIAL_MATRIX[:, :, :, i, 2] = sp.convolve(FOUR_POTENTIAL_MATRIX[:, :, :, i], div_z_mask)
+        DIV_FOUR_POTENTIAL_MATRIX[:, :, :, i, 0] = sp.convolve(FOUR_POTENTIAL_MATRIX[:, :, :, i], div_x_mask, mode="same")
+        DIV_FOUR_POTENTIAL_MATRIX[:, :, :, i, 1] = sp.convolve(FOUR_POTENTIAL_MATRIX[:, :, :, i], div_y_mask, mode="same")
+        DIV_FOUR_POTENTIAL_MATRIX[:, :, :, i, 2] = sp.convolve(FOUR_POTENTIAL_MATRIX[:, :, :, i], div_z_mask, mode="same")
         
     return
 
 def calculate_a_dot():
+    
+    global FOUR_POTENTIAL_DOT_MATRIX, FOUR_POTENTIAL_MATRIX, FOUR_POTENTIAL_DOUBLE_DOT
+    
     calculate_a_double_dot()
     FOUR_POTENTIAL_DOT_MATRIX = FOUR_POTENTIAL_MATRIX - FOUR_POTENTIAL_MATRIX_OLD + DELTA_T * FOUR_POTENTIAL_DOUBLE_DOT
     return
 
     
 def update_a():
+    
+    global FOUR_POTENTIAL_MATRIX, FOUR_POTENTIAL_MATRIX_OLD, FOUR_POTENTIAL_DOT_MATRIX
     calculate_laplacian_of_a()
     calculate_div_of_a()
     calculate_a_dot()
     
     FOUR_POTENTIAL_MATRIX_OLD = FOUR_POTENTIAL_MATRIX
-    FOUR_POTENTIAL_DOT_MATRIX = FOUR_POTENTIAL_MATRIX + DELTA_T * FOUR_POTENTIAL_DOT_MATRIX
+    FOUR_POTENTIAL_MATRIX = FOUR_POTENTIAL_MATRIX + DELTA_T * FOUR_POTENTIAL_DOT_MATRIX
     
     return
 def render(ax, matrix, z_val=int(Z_SIZE/2)):
@@ -117,7 +130,7 @@ def render(ax, matrix, z_val=int(Z_SIZE/2)):
         matrix (np.ndarray): The 3D array to be rendered
         z_val (int): The vertical value to render. Defaults to int(Z_SIZE/2).
     """
-    matrix_slice = matrix[:, :, z_val], fig
+    matrix_slice = matrix[:, :, z_val]
     ax.imshow(matrix_slice, cmap='gray')
     fig.show()
     input("Press Any Key to Continute...")
@@ -159,7 +172,7 @@ def main():
     key_stroke = ""
     while(True):
         update_a()
-        render(FOUR_POTENTIAL_MATRIX[:,:,:,0].astype(np.int32))
+        render(ax_vector, FOUR_POTENTIAL_MATRIX[:,:,:,0].astype(np.int32))
         key_stroke = input("Proceed? (Y/n)")
         if key_stroke == "Y":
             continue
