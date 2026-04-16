@@ -2,6 +2,15 @@ import scipy.signal as sp
 import matplotlib.pyplot as plt
 import numpy as np
 from constants import *
+import logging
+logger = logging.getLogger(__name__)
+ch = logging.StreamHandler()
+ch.setLevel(logging.INFO)
+formatter = logging.Formatter("%(asctime)s: %(levelname)s: %(message)s")
+formatter_short = logging.Formatter("%(message)s")
+logger.addHandler(ch)
+ch.setFormatter(formatter_short)
+
 
 
 # --- Initialize Matrices ---
@@ -165,6 +174,9 @@ def get_u_mu(*particle_entry):
     return [u_0, u_1, u_2, u_3]
 
 def main():
+    
+    logging.basicConfig(filename="main_log.log", level=logging.INFO)
+    logger.info("Start")
     """Main method for development.
     """
     global fig
@@ -184,16 +196,19 @@ def main():
     key_stroke = ""
     while(True):
         update_a()
-        render(ax_vector, FOUR_POTENTIAL_MATRIX[:,:,:,0].astype(np.int32))
+        logger.info("Charge at %d %d %d is [%d, %d, %d, %d]", X_SIZE/2, Y_SIZE/2, Z_SIZE/2, *PARTICLE_MATRIX[int(X_SIZE/2), int(Y_SIZE/2), int(Z_SIZE/2)])
+        logger.info("Four Velocity at %d %d %d is [%d, %d, %d, %d]", X_SIZE/2, Y_SIZE/2, Z_SIZE/2, *PROPER_VELOCITY_MATRIX[int(X_SIZE/2), int(Y_SIZE/2), int(Z_SIZE/2)])
+        logger.info("Four Potential at %d %d %d is [%d, %d, %d, %d]", X_SIZE/2, Y_SIZE/2, Z_SIZE/2, *FOUR_POTENTIAL_MATRIX[int(X_SIZE/2), int(Y_SIZE/2), int(Z_SIZE/2)])
+        # render(ax_vector, FOUR_POTENTIAL_MATRIX[:,:,:,0].astype(np.int32))
         key_stroke = input("Proceed? (Y/n)")
         if key_stroke == "Y":
             continue
         elif key_stroke == "n":
             break
         else:
-            print("error")
+            logger.error("Unhandled ERROR")
             return 1
-
+       
 
 if __name__ == "__main__":
     main()
